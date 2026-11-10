@@ -1,0 +1,40 @@
+{
+	"folders": [
+		{
+			"path": "../../../project/Embedded/test_1"
+		},
+		{
+			"name": "Test project",
+			"path": "../Test project"
+		},
+		{
+			"name": "Test project 1",
+			"path": "../Test project 1"
+		},
+		{
+			"name": "OLED_test",
+			"path": "../OLED_test"
+		},
+		{
+			"name": "traffic_lights_test_lesson2",
+			"path": "../traffic_lights_test_lesson2"
+		},
+		{
+			"name": "LED_1",
+			"path": "../LED_1"
+		},
+		{
+			"name": "Step_to_stm32",
+			"path": "."
+		},
+		{
+			"name": "stm32",
+			"path": "../stm32"
+		},
+		{
+			"name": "OLED_stm32_test",
+			"path": "../OLED_stm32_test"
+		}
+	],
+	"settings": {}
+}
