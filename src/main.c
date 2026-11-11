@@ -14,6 +14,7 @@
 #include "dl/event_queue.h"
 #include "dl/soft_timer.h"
 #include "cl/button.h"
+#include "cl/led.h"
 #include "cl/lock.h"
 #include "bl/car.h"
 
@@ -50,8 +51,16 @@ static const ButtonConfig BUTTON_CFG[BTN_COUNT] = {
     },
 };
 
+static const LedConfig LED_CFG[LED_COUNT] = {
+    [LED_LEFT] = {.pin = &PIN_LED_LEFT, .timer = TMR_LED_BASE + LED_LEFT},
+    [LED_RIGHT] = {.pin = &PIN_LED_RIGHT, .timer = TMR_LED_BASE + LED_RIGHT},
+    [LED_STOP] = {.pin = &PIN_LED_STOP, .timer = TMR_LED_BASE + LED_STOP},
+    [LED_VALET] = {.pin = &PIN_LED_VALET, .timer = TMR_LED_BASE + LED_VALET},
+};
+
 /* ============ Стан (RAM) ============ */
 static Button buttons[BTN_COUNT];
+static Led leds[LED_COUNT];
 static Lock lock;
 static Car car;
 
@@ -68,6 +77,10 @@ static void route_timeout(uint8_t timer_id)
     else if (timer_id < TMR_LED_BASE)
     {
         button_on_timeout(&buttons[timer_id - TMR_GESTURE_BASE], timer_id);
+    }
+    else if (timer_id < TMR_COUNT)
+    {
+        led_on_timeout(&leds[timer_id - TMR_LED_BASE]);
     }
 }
 
@@ -121,8 +134,18 @@ int main(void)
     {
         button_init(&buttons[id], &BUTTON_CFG[id]);
     }
+    for (uint8_t id = 0; id < LED_COUNT; id++)
+    {
+        led_init(&leds[id], &LED_CFG[id]);
+    }
     lock_init(&lock, &PIN_RELAY);
-    car_init(&car, &lock);
+    car_init(&car, (CarParts){
+                       .lock = &lock,
+                       .left = &leds[LED_LEFT],
+                       .right = &leds[LED_RIGHT],
+                       .stop = &leds[LED_STOP],
+                       .valet = &leds[LED_VALET],
+                   });
 
     for (;;)
     {
