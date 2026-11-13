@@ -5,15 +5,20 @@ void button_init(Button *b)
 {
     GPIO_InitTypeDef gpio = {0};
     gpio.Pin = b->pin;
-    gpio.Mode = GPIO_MODE_INPUT;
+    gpio.Mode = GPIO_MODE_IT_RISING_FALLING;
     /* Підтяжка тримає пін у НЕактивному рівні, поки кнопку не натиснули. */
     gpio.Pull = (b->active == GPIO_PIN_RESET) ? GPIO_PULLUP : GPIO_PULLDOWN;
     HAL_GPIO_Init(b->port, &gpio);
 
     /* Якщо кнопку тримають під час старту — це не рахується натисканням. */
     b->pressed = HAL_GPIO_ReadPin(b->port, b->pin) == b->active;
-    b->last_same = HAL_GetTick();
     b->state = BTN_IDLE;
+}
+
+void button_on_edge(Button *b)
+{
+    b->edge = true;
+    b->edge_time = HAL_GetTick();
 }
 
 ButtonEvent button_update(Button *b)
@@ -24,20 +29,22 @@ ButtonEvent button_update(Button *b)
     bool press = false;   /* щойно натиснули */
     bool release = false; /* щойно відпустили */
 
-    bool raw = HAL_GPIO_ReadPin(b->port, b->pin) == b->active;
-    if (raw == b->pressed)
+    __disable_irq();
+    bool settled = b->edge && (HAL_GetTick() - b->edge_time >= DEBOUNCE_MS);
+    if (settled)
+        b->edge = false;
+    __enable_irq();
+    if (settled)
     {
-        b->last_same = now;
-    }
-    else if (now - b->last_same >= DEBOUNCE_MS)
-    {
-        b->pressed = raw;
-        b->last_same = now;
-        press = raw;
-        release = !raw;
+        bool raw = HAL_GPIO_ReadPin(b->port, b->pin) == b->active;
+        if (raw != b->pressed)
+        {
+            b->pressed = raw;
+            press = raw;
+            release = !raw;
+        }
     }
 
-    /* ---- 2. Жести ---- */
     switch (b->state)
     {
     case BTN_IDLE:

@@ -3,8 +3,6 @@
  * Кнопка: прибирає брязкіт контактів і розпізнає жести
  * (коротке / подвійне / довге натискання).
  *
- * Працює без переривань: button_update() викликають з головного циклу
- * раз на 1 мс, вона читає пін і порівнює час через HAL_GetTick().
  */
 #include <stdbool.h>
 #include "stm32f4xx_hal.h"
@@ -36,12 +34,14 @@ typedef struct
 
     /* Стан — веде сама кнопка */
     bool pressed;       /* натиснута чи ні (вже без брязкоту) */
-    uint32_t last_same; /* коли пін востаннє збігався з pressed */
     ButtonState state;
     uint32_t state_time; /* коли увійшли в поточний стан */
+    volatile bool edge;
+    volatile uint32_t edge_time;
 } Button;
 
 void button_init(Button *b);
+void button_on_edge(Button *b);
 
 /* Викликати в кожному проході головного циклу. Повертає жест або EVT_NONE. */
 ButtonEvent button_update(Button *b);
